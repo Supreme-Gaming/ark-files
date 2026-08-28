@@ -76,3 +76,16 @@ new ArkFiles('/path/', (60 * 60)); // 1 hour
 const { ArkFiles, ArkBinaryFormats } = require('ark-files');
 new ArkFiles('/path/', (60 * 60), ArkBinaryFormats.ASA);
 ```
+
+By default the first argument is treated as an ARK **server root**, and files are read from `{serverRoot}/ShooterGame/Saved/SavedArks`.
+
+To point at a SavedArks directory (or any other complete files path) directly, pass `absolutePath` as `true`:
+
+```js
+// Use the given path as-is instead of appending ShooterGame/Saved/SavedArks
+new ArkFiles('/mnt/saves/SavedArks', undefined, undefined, true);
+
+// Same with cache interval and format
+const { ArkFiles, ArkBinaryFormats } = require('ark-files');
+new ArkFiles('/mnt/saves/SavedArks', (60 * 60), ArkBinaryFormats.ASA, true);
+```

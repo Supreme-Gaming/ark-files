@@ -12,17 +12,14 @@ const ArkBinaryFormats = require('./ArkBinaryFormats');
  */
 class ArkFilesData {
 
-    /**
-     * Constructor
-     * @param {string} arkServerDir
-     * @param {Number} refreshInterval
-     */
-    constructor(arkServerDir, refreshInterval = (60 * 5), format = ArkBinaryFormats.ASE) {
-        this.arkFilesDir = path.join(arkServerDir, "ShooterGame", "Saved", "SavedArks");
+    constructor(arkServerDir, refreshInterval = (60 * 5), format = ArkBinaryFormats.ASE, absolutePath = false) {
+        this.arkFilesDir = absolutePath
+            ? arkServerDir
+            : path.join(arkServerDir, "ShooterGame", "Saved", "SavedArks");
         this.refreshInterval = refreshInterval;
+        this.format = format;
         this.cache = {};
         this.cacheTime = 0;
-        this.format = format;
     }
 
     /**
