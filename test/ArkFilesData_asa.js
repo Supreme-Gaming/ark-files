@@ -1,6 +1,7 @@
+const path = require('path');
 const ArkFiles = require('../src/ArkFilesData');
 const ArkBinaryFormats = require('../src/ArkBinaryFormats');
-const arkFiles = new ArkFiles('test/assets/asa', null, ArkBinaryFormats.ASA);
+const arkFiles = new ArkFiles(path.join(__dirname, 'assets/asa'), null, ArkBinaryFormats.ASA);
 const chai = require('chai');
 const expect = chai.expect;
 

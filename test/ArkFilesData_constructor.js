@@ -6,13 +6,15 @@ const expect = chai.expect;
 
 describe('constructor', () => {
   it('resolves a server root to ShooterGame/Saved/SavedArks', () => {
-    const arkFiles = new ArkFiles('test/assets/ase');
-    expect(arkFiles.arkFilesDir).to.equal(path.join('test/assets/ase', 'ShooterGame', 'Saved', 'SavedArks'));
+    const serverRoot = path.join(__dirname, 'assets/ase');
+    const arkFiles = new ArkFiles(serverRoot);
+
+    expect(arkFiles.arkFilesDir).to.equal(path.join(serverRoot, 'ShooterGame', 'Saved', 'SavedArks'));
     expect(arkFiles.getPlayers()).to.have.lengthOf(1);
   });
 
   it('uses arkServerDir as-is when absolutePath is true', () => {
-    const arkFilesDir = path.resolve('test/assets/ase/ShooterGame/Saved/SavedArks');
+    const arkFilesDir = path.join(__dirname, 'assets/ase/ShooterGame/Saved/SavedArks');
     const arkFiles = new ArkFiles(arkFilesDir, undefined, undefined, true);
 
     expect(arkFiles.arkFilesDir).to.equal(arkFilesDir);
@@ -20,7 +22,7 @@ describe('constructor', () => {
   });
 
   it('uses arkServerDir as-is with format and refreshInterval when absolutePath is true', () => {
-    const arkFilesDir = path.resolve('test/assets/asa/ShooterGame/Saved/SavedArks');
+    const arkFilesDir = path.join(__dirname, 'assets/asa/ShooterGame/Saved/SavedArks');
     const arkFiles = new ArkFiles(arkFilesDir, 120, ArkBinaryFormats.ASA, true);
 
     expect(arkFiles.refreshInterval).to.equal(120);
