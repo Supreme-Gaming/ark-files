@@ -220,7 +220,21 @@ class ArkFilesData {
             FileUpdated: util.formatTime(fileData.mtime)
         };
 
-        tribe.Id = binaryParser.getProperty('TribeID', this.format);
+        // ASE uses TribeId (IntProperty). Some files also have TribeID as a
+        // UInt32 array (allied IDs). Prefer the scalar so we don't treat that
+        // array as this tribe's id. ASA uses TribeID as the scalar.
+        const tribeIdNames = this.format === ArkBinaryFormats.ASA
+            ? ['TribeID', 'TribeId']
+            : ['TribeId', 'TribeID'];
+
+        tribe.Id = false;
+        for (const name of tribeIdNames) {
+            const value = binaryParser.getProperty(name, this.format);
+            if (typeof value === 'number') {
+                tribe.Id = value;
+                break;
+            }
+        }
 
         return tribe;
 
