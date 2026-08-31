@@ -132,6 +132,10 @@ module.exports = class BinaryParser {
      * to correctly handle offset in calling function.
      */
     static getStringProperty(offset, buffer, format = ArkBinaryFormats.ASE) {
+        if (offset < 0 || offset + 4 > buffer.length) {
+            return { value: '', length: 0, byteLength: 0 };
+        }
+
         let propertyLength = buffer.readInt32LE(offset);
            
         // Start of the string property
@@ -169,12 +173,30 @@ module.exports = class BinaryParser {
                 value: buffer.toString('utf8', offset, offset + propertyLength - 1), // Exclude null terminator
                 length: propertyLength
             }
-        } else {
-            return {
-                value: buffer.toString('utf8', offset, offset + propertyLength-1),
-                length: propertyLength-1
-            }
         }
+
+        // ASE FString: positive length is UTF-8 bytes including null; negative is
+        // UTF-16 wchar count including null (UE FString wide-string encoding).
+        if (propertyLength < 0) {
+            const byteLength = (-propertyLength) * 2;
+            const end = Math.min(offset + byteLength, buffer.length);
+            return {
+                value: buffer.toString('utf16le', offset, end),
+                length: byteLength,
+                byteLength
+            };
+        }
+
+        if (propertyLength === 0) {
+            return { value: '', length: 0, byteLength: 0 };
+        }
+
+        const end = Math.min(offset + propertyLength - 1, buffer.length);
+        return {
+            value: buffer.toString('utf8', offset, end),
+            length: propertyLength - 1,
+            byteLength: propertyLength
+        };
     }
 
     /**
@@ -204,15 +226,21 @@ module.exports = class BinaryParser {
 
         // Loop for array length
         for(let i = 0; i < arrayLength; i++) {
+            if (offset + 4 > buffer.length) {
+                break;
+            }
+
             // Placeholder for value
             let value;
             // Switch the array type
             switch(propertySubtype.replace(/\0[\s\S]*$/g,'')) {
-                case 'StrProperty':
-                    value = BinaryParser.getStringProperty(offset, buffer).value;
-                    // Add the length of the value as extra offset (+1 for null terminator)
-                    offset += value.length + 1;
+                case 'StrProperty': {
+                    const parsed = BinaryParser.getStringProperty(offset, buffer);
+                    value = parsed.value;
+                    // Advance by encoded payload bytes (UTF-8 or UTF-16), not JS string length
+                    offset += parsed.byteLength;
                     break;
+                }
                 case 'IntProperty':
                     value = BinaryParser.getIntProperty(offset, buffer);
                     break;
