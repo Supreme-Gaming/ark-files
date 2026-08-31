@@ -154,32 +154,42 @@ class ArkFilesData {
      * @private
      */
     _playerFactory(file) {
-        let data = this._readFile(file),
-            fileData = fs.statSync(path.join(this.arkFilesDir, file)),
-            binaryParser = new ArkBinaryParser(data, this.format);
+        try {
+            let data = this._readFile(file),
+                fileData = fs.statSync(path.join(this.arkFilesDir, file)),
+                binaryParser = new ArkBinaryParser(data, this.format);
 
-        let player =  {
-            Tribe: false,
-            PlayerName: binaryParser.getProperty('PlayerName', this.format),
-            Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel', this.format) + 1,
-            TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints', this.format),
-            CharacterName: binaryParser.getProperty('PlayerCharacterName', this.format),
-            PlayerId: binaryParser.getProperty('PlayerDataID', this.format),
-            FileCreated: util.formatTime(fileData.birthtime),
-            FileUpdated: util.formatTime(fileData.mtime)
-        };
+            let player =  {
+                Tribe: false,
+                PlayerName: binaryParser.getProperty('PlayerName', this.format),
+                Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel', this.format) + 1,
+                TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints', this.format),
+                CharacterName: binaryParser.getProperty('PlayerCharacterName', this.format),
+                PlayerId: binaryParser.getProperty('PlayerDataID', this.format),
+                FileCreated: util.formatTime(fileData.birthtime),
+                FileUpdated: util.formatTime(fileData.mtime)
+            };
 
-        // ASA and ASE use different property names for certain fields
-        // or simply don't exist (SteamId and EosId)
-        if(this.format === ArkBinaryFormats.ASA) {
-            player.TribeId = binaryParser.getProperty('TribeID', this.format);
-            player.EosId = binaryParser.getEosId();
-        } else {
-            player.TribeId = binaryParser.getProperty('TribeId', this.format);
-            player.SteamId = binaryParser.getSteamId();
+            // ASA and ASE use different property names for certain fields
+            // or simply don't exist (SteamId and EosId)
+            if(this.format === ArkBinaryFormats.ASA) {
+                player.TribeId = binaryParser.getProperty('TribeID', this.format);
+                player.EosId = binaryParser.getEosId();
+            } else {
+                player.TribeId = binaryParser.getProperty('TribeId', this.format);
+                player.SteamId = binaryParser.getSteamId();
+            }
+
+            // Drop empty or encrypted profiles that have no identity fields
+            if (typeof player.PlayerId !== 'number' && !player.PlayerName) {
+                return null;
+            }
+
+            return player;
+        } catch (error) {
+            console.error(`Error processing player file ${file}:`, error);
+            return null;
         }
-
-        return player;
     }
 
     /**
@@ -234,6 +244,11 @@ class ArkFilesData {
                 tribe.Id = value;
                 break;
             }
+        }
+
+        // Drop zeroed or otherwise unreadable tribe files
+        if (typeof tribe.Id !== 'number' && !tribe.Name) {
+            return null;
         }
 
         return tribe;
