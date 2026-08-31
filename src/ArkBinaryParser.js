@@ -377,6 +377,10 @@ module.exports = class BinaryParser {
      * @returns {string}
      */
     static trim(value) {
+        if (typeof value !== 'string') {
+            return value;
+        }
+
         return value.replace(/[\x00-\x1F\x7F]+/g, '').trim();
     }
 };
